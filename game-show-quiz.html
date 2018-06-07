@@ -2,6 +2,22 @@
 <link rel="import" href="../materializecss-styles/materializecss-styles.html">
 <link rel="import" href="../hax-body-behaviors/hax-body-behaviors.html">
 <link rel="import" href="../schema-behaviors/schema-behaviors.html">
+<link rel="import" href="../app-layout/app-drawer/app-drawer.html">
+<link rel="import" href="../app-layout/app-header/app-header.html">
+<link rel="import" href="../app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-toast/paper-toast.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-image/iron-image.html">
+<link rel="import" href="../multiple-choice/multiple-choice.html">
+<link rel="import" href="../responsive-grid/responsive-grid-row.html">
+<link rel="import" href="../responsive-grid/responsive-grid-col.html">
+
 <!--
 `game-show-quiz`
 A LRN element
@@ -9,8 +25,7 @@ A LRN element
 @demo demo/index.html
 
 @microcopy - the mental model for this element
- -
- -
+ - game show - a display board in the style of Jeopardy
 
 -->
 
@@ -20,14 +35,136 @@ A LRN element
       :host {
         display: block;
       }
+      app-toolbar {
+        background-color: #4285f4;
+        color: #fff;
+      }
+
+      paper-icon-button {
+        --paper-icon-button-ink-color: white;
+      }
+      paper-icon-button + [main-title] {
+        margin-left: 24px;
+      }
+      app-header {
+        color: #fff;
+        --app-header-background-rear-layer: {
+          background-color: #ef6c00;
+        };
+      }
+      app-drawer {
+        --app-drawer-scrim-background: rgba(0, 0, 100, 0.8);
+        --app-drawer-content-container: {
+          background-color: #B0BEC5;
+        }
+      }
+      #contentcontainer {
+        padding-top: 64px;
+        margin: 0 auto;
+      }
     </style>
-    <h2>[[title]]</h2>
+    <app-header reveals>
+      <app-toolbar>
+        <paper-icon-button id="helpbutton" icon="help" onclick="directions.toggle()"></paper-icon-button>
+        <div main-title>[[title]]</div>
+      </app-toolbar>
+    </app-header>
+    <div id="contentcontainer">
+      <template is="dom-repeat" items="[[gameBoard]]" as="row">
+        <responsive-grid-row gutter="0">
+        <template is="dom-repeat" items="[[row.cols]]" as="col">
+          <responsive-grid-col xl="3" lg="3" md="3" sm="3" xs="3">
+            <paper-button raised="[[!col.notRaised]]" data-question-data$="[[col.question]]" data-value$="[[col.points]]" disabled$="[[col.disabled]]">[[col.title]]<br/>[[col.points]]</paper-button>
+          </responsive-grid-col>
+        </template>
+      </responsive-grid-row>
+      </template>
+      <div>
+        <h3>Scoreboard</h3>
+        <table>
+          <tr>
+            <th></th>
+            <th>Slide ID</th>
+            <th>Terms</th>
+            <th>Reading</th>
+            <th>Lecture</th>
+            <th>Bonus</th>
+            <th>Total</th>
+          </tr>
+          <tr>
+            <th>Points Attempted</th>
+            <td>[[points.slide.attempted]]</td>
+            <td>[[points.terms.attempted]]</td>
+            <td>[[points.reading.attempted]]</td>
+            <td>[[points.lecture.attempted]]</td>
+            <td>[[points.bonus.attempted]]</td>
+            <td>[[points.total.attempted]]</td>
+          </tr>
+          <tr>
+            <th>Points Earned</th>
+            <td>[[points.slide.earned]]</td>
+            <td>[[points.terms.earned]]</td>
+            <td>[[points.reading.earned]]</td>
+            <td>[[points.lecture.earned]]</td>
+            <td>[[points.bonus.earned]]</td>
+            <td>[[points.total.earned]]</td>
+          </tr>
+          <tr>
+            <th>Category Percentage</th>
+            <td>[[points.slide.percent]]</td>
+            <td>[[points.terms.percent]]</td>
+            <td>[[points.reading.percent]]</td>
+            <td>[[points.lecture.percent]]</td>
+            <td>[[points.bonus.percent]]</td>
+            <td>[[points.total.percent]]</td>
+          </tr>
+        </table>
+      <div>Points Remaining to Attempt: [[remainingAttempts]]</div>
+      </div>
+    </div>
+    <paper-toast id="toast"></paper-toast>
+    <paper-dialog id="directions" modal>
+      <h2>[[directionsTitle]]</h2>
+      <paper-dialog-scrollable>
+        <slot name="directions"></slot>
+      </paper-dialog-scrollable>
+      <div class="buttons">
+        <paper-button id="dismiss" dialog-confirm raised>Good luck!</paper-button>
+      </div>
+    </paper-dialog>
+    <paper-dialog id="dialog" modal style="min-width:60%;">
+      <h2>[[activeQuestion.title]]</h2>
+      <paper-dialog-scrollable>
+        <iron-image style="width:400px; height:225px; background-color: lightgray;" sizing="contain" preload src$="[[activeQuestion.image]]"></iron-image>
+        <multiple-choice id="question" hide-buttons title="[[activeQuestion.title]]" answers="[[activeQuestion.data]]"></multiple-choice>
+      </paper-dialog-scrollable>
+      <div class="buttons">
+        <paper-button hidden$="[[activeQuestion.submitted]]" id="submit" raised>Submit answer</paper-button>
+        <paper-button hidden$="[[!activeQuestion.submitted]]" dialog-confirm raised>Continue</paper-button>
+      </div>
+    </paper-dialog>
+    <iron-ajax
+      auto
+      id="gamedata"
+      url="[[gameData]]"
+      handle-as="json"
+      last-response="{{gameBoard}}"></iron-ajax>
+    <iron-ajax
+      id="questiondata"
+      url="[[__questionEndpoint]]"
+      handle-as="json"
+      last-response="{{activeQuestion}}"></iron-ajax>
   </template>
 
   <script>
     Polymer({
 
       is: 'game-show-quiz',
+      listeners: {
+        'dismiss.tap': 'resetFocus',
+        'contentcontainer.tap': '_gameBoardTap',
+        'submit.tap': 'submitAnswer',
+      },
       behaviors: [HAXBehaviors.PropertiesBehaviors, MaterializeCSSBehaviors.ColorBehaviors, SchemaBehaviors.Schema],
       properties: {
         /**
@@ -36,19 +173,129 @@ A LRN element
         title: {
           type: String,
         },
+        /**
+         * Points object
+         */
+        points: {
+          type: Object,
+          value: {
+            "slide": {
+              "attempted": 0,
+              "earned": 0,
+              "percent": 0,
+            },
+            "terms": {
+              "attempted": 0,
+              "earned": 0,
+              "percent": 0,
+            },
+            "reading": {
+              "attempted": 0,
+              "earned": 0,
+              "percent": 0,
+            },
+            "lecture": {
+              "attempted": 0,
+              "earned": 0,
+              "percent": 0,
+            },
+            "bonus": {
+              "attempted": 0,
+              "earned": 0,
+              "percent": 0,
+            },
+            "total": {
+              "attempted": 0,
+              "earned": 0,
+              "percent": 0,
+            },
+          },
+        },
+        /**
+         * Remaining attempts for the user
+         */
+        remainingAttempts: {
+          type: Number,
+          value: 30,
+        },
+        /**
+         * Title to use on the directions area.
+         */
+        directionsTitle: {
+          type: String,
+          value: 'Directions',
+        },
+        /**
+         * Rows on the gameshow board
+         */
+        gameBoard: {
+          type: Array,
+          observer: '_gameBoardChanged',
+        },
+        /**
+         * URL to load data for the game.
+         */
+        gameData: {
+          type: String,
+        },
+        /**
+         * Active item that is in the modal.
+         */
+        activeQuestion: {
+          type: Object,
+        },
+      },
+      /**
+       * Submit answer to see what they got.
+       */
+      submitAnswer: function(e) {
+        this.set('activeQuestion.submitted', true);
+        if (this.$.question.checkAnswers()) {
+          this.$.toast.show('Correct!');
+        }
+        else {
+          this.$.toast.show('Wrong!');
+        }
+      },
+      /**
+       * Notice that something was tapped, resolve what it was.
+       */
+      _gameBoardTap: function(e) {
+        var normalizedEvent = Polymer.dom(e);
+        var local = normalizedEvent.localTarget;
+        this.__questionEndpoint = local.getAttribute('data-question-data');
+        this.$.questiondata.answers = [];
+        // @todo need to get these to reset correctly
+        setTimeout( () => {
+          this.$.questiondata.generateRequest();
+          this.$.dialog.toggle();
+        }, 100);
+      },
+      /**
+       * Notice the game board has changed from the backend loading it most likely.
+       */
+      _gameBoardChanged: function(newValue, oldvalue) {
+      },
+      /**
+       * Reset focus on close back to the help button
+       */
+      resetFocus: function(e) {
+        this.$.helpbutton.focus();
       },
       /**
        * Attached to the DOM, now fire.
        */
       attached: function() {
+        document.body.appendChild(this.$.dialog);
+        document.body.appendChild(this.$.directions);
         // Establish hax property binding
         let props = {
           'canScale': true,
           'canPosition': true,
           'canEditSource': false,
           'gizmo': {
-            'title': 'Sample gizmo',
-            'description': 'The user will be able to see this for selection in a UI.',
+            'title': 'Game show',
+            'description': 'Tweak the game show options',
             'icon': 'av:play-circle-filled',
             'color': 'grey',
             'groups': ['Video', 'Media'],
