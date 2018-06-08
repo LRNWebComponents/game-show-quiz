@@ -1,15 +1,11 @@
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../materializecss-styles/materializecss-styles.html">
 <link rel="import" href="../hax-body-behaviors/hax-body-behaviors.html">
-<link rel="import" href="../schema-behaviors/schema-behaviors.html">
 <link rel="import" href="../app-layout/app-drawer/app-drawer.html">
 <link rel="import" href="../app-layout/app-header/app-header.html">
 <link rel="import" href="../app-layout/app-toolbar/app-toolbar.html">
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
-<link rel="import" href="../paper-dialog-scrollable/paper-dialog-scrollable.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../paper-dialog/paper-dialog.html">
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-toast/paper-toast.html">
 <link rel="import" href="../iron-ajax/iron-ajax.html">
@@ -17,7 +13,7 @@
 <link rel="import" href="../multiple-choice/multiple-choice.html">
 <link rel="import" href="../responsive-grid/responsive-grid-row.html">
 <link rel="import" href="../responsive-grid/responsive-grid-col.html">
-
+<link rel="import" href="game-show-quiz-modal.html">
 <!--
 `game-show-quiz`
 A LRN element
@@ -34,10 +30,13 @@ A LRN element
     <style>
       :host {
         display: block;
+        --game-show-bg-color: #4285f4;
+        --game-show-text-color: #ffffff;
       }
       app-toolbar {
         background-color: #4285f4;
         color: #fff;
+        font-size: 24px;
       }
 
       paper-icon-button {
@@ -52,18 +51,71 @@ A LRN element
           background-color: #ef6c00;
         };
       }
-      app-drawer {
-        --app-drawer-scrim-background: rgba(0, 0, 100, 0.8);
-        --app-drawer-content-container: {
-          background-color: #B0BEC5;
+      responsive-grid-row {
+        --responsive-grid-row-inner: {
+          margin-left: 0;
+          margin-right: 0;
+        }
+      }
+      responsive-grid-col {
+        --responsive-grid-col-inner: {
+          padding-left: 0;
+          padding-right: 0;
         }
       }
       #contentcontainer {
-        padding-top: 64px;
         margin: 0 auto;
+        font-size: 16px;
+      }
+      .grid-button {
+        width: 100%;
+        height: 80px;
+        text-align: center;
+        min-width: unset;
+        padding: 0;
+        margin: 0;
+      }
+      .status-icon {
+        width: 64px;
+        height: 64px;
+        opacity: .25;
+        position: absolute;
+      }
+      .correct {
+        color: green;
+      }
+      .incorrect {
+        color: red;
+      }
+      .row-0 paper-button[disabled] {
+        font-weight: bold;
+        font-size: 16px;
+      }
+      @media screen and (max-width: 600px) {
+        app-toolbar {
+          font-size: 14px;
+        }
+        paper-icon-button {
+          padding: 0;
+          margin: 0;
+          width: 16px;
+          height: 16px;
+        }
+        .grid-button {
+          font-size: 9px;
+        }
+        .status-icon {
+          width: 24px;
+          height: 24px;
+          opacity: 1;
+        }
+        .row-0 paper-button[disabled] {
+          font-weight: bold;
+          font-size: 10px;
+        }
       }
     </style>
-    <app-header reveals>
+    <app-header>
       <app-toolbar>
         <paper-icon-button id="helpbutton" icon="help" onclick="directions.toggle()"></paper-icon-button>
         <div main-title>[[title]]</div>
@@ -71,10 +123,10 @@ A LRN element
     </app-header>
     <div id="contentcontainer">
       <template is="dom-repeat" items="[[gameBoard]]" as="row">
-        <responsive-grid-row gutter="0">
+        <responsive-grid-row gutter="0" class$="row row-[[index]]">
         <template is="dom-repeat" items="[[row.cols]]" as="col">
           <responsive-grid-col xl="3" lg="3" md="3" sm="3" xs="3">
-            <paper-button raised="[[!col.notRaised]]" data-question-data$="[[col.question]]" data-value$="[[col.points]]" disabled$="[[col.disabled]]">[[col.title]]<br/>[[col.points]]</paper-button>
+            <paper-button class="grid-button" raised="[[!col.notRaised]]" data-question-data$="[[col.question]]" data-value$="[[col.points]]" data-type$="[[col.type]]" disabled$="[[col.disabled]]">[[col.title]]<br/>[[col.points]]</paper-button>
           </responsive-grid-col>
         </template>
       </responsive-grid-row>
@@ -123,26 +175,16 @@ A LRN element
       </div>
     </div>
     <paper-toast id="toast"></paper-toast>
-    <paper-dialog id="directions" modal>
-      <h2>[[directionsTitle]]</h2>
-      <paper-dialog-scrollable>
-        <slot name="directions"></slot>
-      </paper-dialog-scrollable>
-      <div class="buttons">
-        <paper-button id="dismiss" dialog-confirm raised>Good luck!</paper-button>
-      </div>
-    </paper-dialog>
-    <paper-dialog id="dialog" modal style="min-width:60%;">
-      <h2>[[activeQuestion.title]]</h2>
-      <paper-dialog-scrollable>
-        <iron-image style="width:400px; height:225px; background-color: lightgray;" sizing="contain" preload src$="[[activeQuestion.image]]"></iron-image>
-        <multiple-choice id="question" hide-buttons title="[[activeQuestion.title]]" answers="[[activeQuestion.data]]"></multiple-choice>
-      </paper-dialog-scrollable>
-      <div class="buttons">
-        <paper-button hidden$="[[activeQuestion.submitted]]" id="submit" raised>Submit answer</paper-button>
-        <paper-button hidden$="[[!activeQuestion.submitted]]" dialog-confirm raised>Continue</paper-button>
-      </div>
-    </paper-dialog>
+    <game-show-quiz-modal id="directions" title="[[directionsTitle]]">
+      <div slot="content"><slot name="directions"></slot></div>
+      <paper-button slot="buttons" id="dismiss" dialog-confirm raised>Good luck!</paper-button>
+    </game-show-quiz-modal>
+    <game-show-quiz-modal id="dialog" title="[[activeQuestion.title]]">
+      <iron-image slot="content" style="min-width:100px; width:100%; min-height:25vh; height:40vh; background-color: lightgray;" sizing="contain" preload src$="[[activeQuestion.image]]"></iron-image>
+      <multiple-choice disabled$="[[activeQuestion.submitted]]" slot="content" id="question" hide-buttons title="[[activeQuestion.title]]" answers="[[activeQuestion.data]]"></multiple-choice>
+      <paper-button slot="buttons" hidden$="[[activeQuestion.submitted]]" id="submit" raised disabled$="[[__submitDisabled]]">Submit answer <iron-icon hidden$="[[__submitDisabled]]" icon="icons:touch-app"></iron-icon></paper-button>
+      <paper-button slot="buttons" id="continue" hidden$="[[!activeQuestion.submitted]]" dialog-confirm raised>Continue <iron-icon icon="icons:arrow-forward"></iron-icon></paper-button>
+    </game-show-quiz-modal>
     <iron-ajax
       auto
       id="gamedata"
@@ -164,8 +206,10 @@ A LRN element
         'dismiss.tap': 'resetFocus',
         'contentcontainer.tap': '_gameBoardTap',
         'submit.tap': 'submitAnswer',
+        'continue.tap': 'continueGameTap',
+        'question.tap': 'registerTap',
       },
-      behaviors: [HAXBehaviors.PropertiesBehaviors, MaterializeCSSBehaviors.ColorBehaviors, SchemaBehaviors.Schema],
+      behaviors: [HAXBehaviors.PropertiesBehaviors],
       properties: {
         /**
          * Title
@@ -246,16 +290,79 @@ A LRN element
         },
       },
       /**
+       * Continue button pressed.
+       */
+      continueGameTap: function(e) {
+        // destroy this so it rebuilds every time for correct target element
+        // while focusing on the next item just to place keyboard focus more
+        // logically
+        if (typeof this.__activeTap !== typeof undefined && Polymer.dom(this.__activeTap).parentNode.nextElementSibling.firstElementChild != null) {
+          Polymer.dom(this.__activeTap).parentNode.nextElementSibling.firstElementChild.firstElementChild.focus();
+          delete this.__activeTap;
+        }
+        else if (typeof this.__activeTap !== typeof undefined && Polymer.dom(this.__activeTap).parentNode.nextElementSibling.firstElementChild == null) {
+          this.__activeTap.focus();
+          delete this.__activeTap;
+        }
+      },
+      /**
+       * Register a tap on the board.
+       */
+      registerTap: function(e) {
+        // ensure they touch the board before ability to submit
+        this.__submitDisabled = false;
+      },
+      /**
        * Submit answer to see what they got.
        */
       submitAnswer: function(e) {
+        // flip submitted status
         this.set('activeQuestion.submitted', true);
+        this.$.continue.focus();
+        // maker this disabled on the board
+        this.__activeTap.disabled = true;
+        // start to build a status icon
+        let icon = document.createElement('iron-icon');
+        icon.classList.add('status-icon');
+        // update attempts for the category
+        let num = parseInt(this.points[this.__activeType].attempted) + parseInt(this.__activeValue);
+        this.set('points.' + this.__activeType + '.attempted', num);
+        // update the global totals for attempt
+        let total = parseInt(this.points.total.attempted) + parseInt(this.__activeValue);
+        this.set('points.total.attempted', total);
+        // update remaining attempts
+        this.remainingAttempts = this.remainingAttempts - parseInt(this.__activeValue);
+        // if current answer is correct
         if (this.$.question.checkAnswers()) {
+          // show correct
           this.$.toast.show('Correct!');
+          // @todo need an area for placing feedback
+          // update the earned column
+          let num = parseInt(this.points[this.__activeType].earned) + parseInt(this.__activeValue);
+          this.set('points.' + this.__activeType + '.earned', num);
+          // set icon to correct
+          icon.icon = 'icons:check-circle';
+          icon.classList.add('correct');
+          // update total column
+          let total = parseInt(this.points.total.earned) + parseInt(this.__activeValue);
+          this.set('points.total.earned', total);
         }
         else {
-          this.$.toast.show('Wrong!');
+          // show wrong
+          this.$.toast.show(':( You got it wrong');
+          // @todo show feedback for wrong answer as to why
+          // set icon to incorrect
+          icon.icon = 'icons:cancel';
+          icon.classList.add('incorrect');
         }
+        // update the percent for this column
+        let percent = (parseInt(this.points[this.__activeType].earned) / parseInt(this.points[this.__activeType].attempted) * 100).toFixed(1);
+        this.set('points.' + this.__activeType + '.percent', percent);
+        // update the percent
+        total = (parseInt(this.points.total.earned) / parseInt(this.points.total.attempted) * 100).toFixed(1);
+        this.set('points.total.percent', total);
+        // append child via polymer so we can style it correctly in shadow dom
+        Polymer.dom(this.__activeTap).appendChild(icon);
       },
       /**
        * Notice that something was tapped, resolve what it was.
@@ -263,13 +370,19 @@ A LRN element
       _gameBoardTap: function(e) {
         var normalizedEvent = Polymer.dom(e);
         var local = normalizedEvent.localTarget;
-        this.__questionEndpoint = local.getAttribute('data-question-data');
-        this.$.questiondata.answers = [];
-        // @todo need to get these to reset correctly
-        setTimeout( () => {
-          this.$.questiondata.generateRequest();
-          this.$.dialog.toggle();
-        }, 100);
+        if (local.getAttribute('data-question-data') != null) {
+          this.__submitDisabled = true;
+          this.__questionEndpoint = local.getAttribute('data-question-data');
+          this.__activeTap = local;
+          this.__activeType = local.getAttribute('data-type');
+          this.__activeValue = local.getAttribute('data-value');
+          this.$.questiondata.answers = [];
+          // @todo need to get these to reset correctly
+          setTimeout( () => {
+            this.$.questiondata.generateRequest();
+            this.$.dialog.toggle();
+          }, 100);
+        }
       },
       /**
        * Notice the game board has changed from the backend loading it most likely.
