@@ -1,0 +1,42 @@
+{
+  "name": "game-show-quiz",
+  "description": "A LRN element",
+  "license": "Apache-2.0",
+  "main": "game-show-quiz.html",
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.10.1",
+    "hax-body-behaviors": "LRNWebComponents/hax-body-behaviors#^1.12.4",
+    "materializecss-styles": "LRNWebComponents/materializecss-styles#^1.2.1",
+    "schema-behaviors": "LRNWebComponents/schema-behaviors#^1.0.0",
+    "responsive-grid": "LRNWebComponents/responsive-grid#^0.2.2",
+    "paper-button": "PolymerElements/paper-button#^2.1.1",
+    "paper-dialog": "PolymerElements/paper-dialog#^2.1.1",
+    "paper-icon-button": "PolymerElements/paper-icon-button#^2.2.0",
+    "app-layout": "PolymerElements/app-layout#^2.1.1",
+    "paper-dialog-scrollable": "PolymerElements/paper-dialog-scrollable#^2.2.1",
+    "iron-ajax": "PolymerElements/iron-ajax#^2.1.3",
+    "paper-toast": "PolymerElements/paper-toast#^2.1.1",
+    "multiple-choice": "LRNWebComponents/multiple-choice#^1.0.3",
+    "iron-image": "PolymerElements/iron-image#^2.2.1"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "web-component-tester": "^4.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0"
+  },
+  "resolutions": {
+    "webcomponentsjs": "^0.7.24"
+  },
+  "homepage": "https://github.com/LRNWebComponents/game-show-quiz",
+  "_release": "1aa52b28ed",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "1aa52b28eda074985517cb9b50c9db944ccd760e"
+  },
+  "_source": "https://github.com/LRNWebComponents/game-show-quiz.git",
+  "_target": "master",
+  "_originalSource": "LRNWebComponents/game-show-quiz",
+  "_direct": true
+}
